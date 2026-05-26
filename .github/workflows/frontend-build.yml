@@ -1,31 +1,51 @@
 on:
-  pull_request:
-    branches:
-      - v3.*
-    paths:
-      - "frontend/**"
+ pull_request:
+   branches:
+    - v3.*
+   paths:
+    - "frontend/**"
+
 
 # If two events are triggered within a short time in the same PR, cancel the run of the oldest event
+ push:
+ workflow_dispatch:
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+ group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+ cancel-in-progress: true
+
 
 name: MeterSphere 前端代码校验
 
+
 permissions:
-  pull-requests: write
+ pull-requests: write
+
 
 jobs:
-  generic_handler:
-    name: 前端代码校验
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK 21
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          check-latest: true
-      - name: Build with Maven - only frontend
-        run: mvn -T 1C -B package --file pom.xml -pl frontend
+ generic_handler:
+   name: 前端代码校验
+   runs-on: ${{ matrix.os }}
+   steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: 21
+        check-latest: true
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'pnpm'
+    - uses: pnpm/action-setup@v4
+      with:
+        version: 8
+    - name: Build with Maven - only frontend
+      run: mvn -T 1C -B package --file pom.xml -pl frontend
+   strategy:
+     matrix:
+       os:
+        - ubuntu-latest
+        - windows-latest
+        - macos-latest
+     fail-fast: false
